@@ -1,0 +1,95 @@
+#! /usr/bin/make -f
+
+SHELL = /bin/bash
+
+# all versions
+PYVERS	:= $(shell pyversions -vs)
+VER	:= $(shell /usr/bin/python -c 'import sys; print sys.version[:3]')
+
+build: build-stamp
+build-arch: build-stamp
+build-indep: build-stamp
+build-stamp: $(PYVERS:%=build-python%)
+	touch $@
+build-python%:
+	python$* setup.py build
+	touch $@
+
+clean:
+	rm -rf *-stamp build-python* build
+	rm -rf $(addprefix debian/,$(packages)) debian/files debian/substvars
+	rm -rf _trial_temp test.log
+	find . -name "*.pyc" |xargs -r rm
+	dh_clean
+
+install: build-stamp install-prereq $(PYVERS:%=install-python%) install-nover
+
+install-prereq: build-stamp
+	dh_testdir
+	dh_testroot
+	dh_prep
+
+install-python%: install-prereq
+	: # python-twisted-news
+	python$* setup.py install --root=debian/python-twisted-news --install-layout=deb
+	-find debian/python-twisted-news -name '*.py[co]' | xargs rm -f
+ifeq (0,1)
+	for i in debian/python$*-twisted-news/usr/bin/*; do \
+	  mv $$i $${i}$*; \
+	done
+	mkdir -p debian/python$*-twisted-news/usr/share/man/man1
+	for i in doc/man/*.1; do \
+	  iv=`basename $$i .1`$*.1; \
+	  cp -p $$i debian/python$*-twisted-news/usr/share/man/man1/$$iv; \
+	done
+endif
+
+	: # Replace all '#!' calls to python with python
+	: # and make them executable
+	for i in `find debian/python-twisted-* -mindepth 3 -type f`; do \
+	  sed '1s,#!.*python[^ ]*\(.*\),#! /usr/bin/python\1,' \
+		$$i > $$i.temp; \
+	  if cmp --quiet $$i $$i.temp; then \
+	    rm -f $$i.temp; \
+	  else \
+	    mv -f $$i.temp $$i; \
+	    chmod 755 $$i; \
+	    echo "fixed interpreter: $$i"; \
+	  fi; \
+	done
+
+install-nover:
+ifeq (0,1)
+	: # python-twisted-news
+	mkdir -p debian/python-twisted-news/usr/bin
+	for i in debian/python$(VER)-twisted-news/usr/bin/*; do \
+	  iv=`basename $$i $(VER)`; \
+	  ln -sf $${iv}$(VER) debian/python-twisted-news/usr/bin/$$iv; \
+	done
+	mkdir -p debian/python-twisted-news/usr/share/man/man1
+	for i in debian/python$(VER)-twisted-news/usr/share/man/man1/*; do \
+	  iv=`basename $$i $(VER).1`; \
+	  ln -sf $${iv}$(VER).1.gz \
+	    debian/python-twisted-news/usr/share/man/man1/$$iv.1.gz; \
+	done
+endif
+
+binary-indep: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs -i
+	dh_installdocs -i -A README
+	dh_installmenu -i
+	dh_compress -i -X.py
+	dh_fixperms -i
+	dh_pycentral -i
+	dh_installdeb -i
+	dh_gencontrol -i
+	dh_md5sums -i
+	dh_builddeb -i
+
+binary-arch: build install
+# nothing to do
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install install-nover install-prereq
