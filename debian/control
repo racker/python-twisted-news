@@ -1,0 +1,22 @@
+Source: twisted-news
+Section: python
+Priority: optional
+Maintainer: Matthias Klose <doko@debian.org>
+Uploaders: Free Ekanayaka <freee@debian.org>
+Build-Depends: debhelper (>=7.0.50~), python-central (>= 0.6.7), python-all, python-twisted-core (>= 12.0), patch
+XS-Python-Version: all
+Standards-Version: 3.9.2
+
+Package: python-twisted-news
+Architecture: all
+Depends: ${python:Depends}, python-twisted-core (>= 12.0), ${misc:Depends}
+Conflicts: python2.3-twisted-news, python2.4-twisted-news
+Replaces: python2.3-twisted-news, python2.4-twisted-news
+Description: NNTP protocol implementation with client and server
+ Twisted News provides a very basic NNTP server, as well as an NNTP
+ client protocol implementation. Two messages storage systems are
+ supported: the DB-API 2.0 backend stores and indexes messages in any
+ compatible SQL database; the Twisted dirdbm backend uses serialized
+ Python objects stored directly on the filesystem for message
+ storage. Twisted News also has very rudamentary support for moderated
+ groups.

@@ -1,0 +1,2 @@
+version=3
+http://tmrc.mit.edu/mirror/twisted/News/(\d\.\d)/ TwistedNews-([\d\.]*)\.tar\.bz2
